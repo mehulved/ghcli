@@ -1,4 +1,4 @@
 login.cfg
 venv
-.swp
-.pyc
+*.swp
+*.pyc
