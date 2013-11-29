@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Application to manage github account.
 
@@ -55,22 +56,41 @@ def list_members(repo_name):
         print collaborator.login
 
 
-def add_member(instance, repo_name, members):
+def add_member(repo_name, member):
     """Add given user to access rights to a repository."""
-    pass
+    instance = auth_user()
+    user = instance.user().get().login
+    instance.repos(user)(repo_name)('collaborators')(member).put()
+    print "%s added to repository %s." % (member, repo_name)
+
+
+def remove_member(repo_name, member):
+    """Remove given user from access rights to a repository."""
+    instance = auth_user()
+    user = instance.user().get().login
+    instance.repos(user)(repo_name)('collaborators')(member).delete()
+    print "%s removed from repository %s." % (member, repo_name)
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog='PROG')
+    parser = argparse.ArgumentParser()
     parser.add_argument("--list-repos", action='store_true',
                         help="List repositories belonging to the user.")
-    new_repo = parser.add_argument_group('newrepo')
+    new_repo = parser.add_argument_group('Create Repository')
     new_repo.add_argument("--add-repo", nargs=1,
-                          help="""Create a new repository. Optionally specify
-                          false for creating a public repo.""")
+                          help="""Create a new repository. Optionally
+                          specify false for creating a public repo.""")
     new_repo.add_argument("--public", action="store_true",
                           help="Make the repo public.")
     parser.add_argument("--list-members", nargs=1,
                         help="Collaborators assigned to a given repository.")
+    collab = parser.add_argument_group("Collaborators")
+    manage_collaborator = collab.add_mutually_exclusive_group()
+    manage_collaborator.add_argument("--add-collaborator", nargs=1,
+                                     help="Add collaborator for the repo.")
+    manage_collaborator.add_argument("--remove-collaborator", nargs=1,
+                                     help="Remove collaborator from the repo.")
+    collab.add_argument("--repo", nargs=1, help="Repo Name")
     values = parser.parse_args()
     if values.list_repos:
         list_repos()
@@ -78,4 +98,8 @@ if __name__ == "__main__":
         access = not values.public
         create_repo(values.add_repo[0], access)
     elif values.list_members:
-        list_members(values.list_members)
+        list_members(values.list_members[0])
+    elif values.add_collaborator:
+        add_member(values.repo[0], values.add_collaborator[0])
+    elif values.remove_collaborator:
+        remove_member(values.repo[0], values.remove_collaborator[0])
